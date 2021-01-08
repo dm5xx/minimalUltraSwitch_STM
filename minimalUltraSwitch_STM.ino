@@ -8,7 +8,7 @@
 #define DHCP
 #define DEBUG
 
-byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+byte mac[] = {0xDE, 0xAD, 0xBE, 0x01, 0x01, 0x01};
 
 //uncomment and change if you need to adress a static ip in your local environment
 //IPAddress ip(192, 168, 97, 177);
@@ -33,7 +33,7 @@ String ClientIP = "255.255.255.255";
 
 int pinsOrder[16] = { 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15 };
 
-#define  NUMBEROFBOARDS 8
+#define  NUMBEROFBOARDS 4
 
 struct RelayCard
 {
@@ -92,7 +92,7 @@ void updatePin(int pin, byte value, int bankNr)
 void updatePinStatus(unsigned int value, int bankNr)
 {
 
-  relayArray[0].bankStatus = value;
+  relayArray[bankNr].bankStatus = value;
   GetOrderedArraybyValue(value, relayArray[bankNr].pinStatus);
   updateRelays(relayArray[bankNr], bankNr);
 
@@ -153,34 +153,13 @@ void GetDataJSON(EthernetClient &client)
   client.println(F(""));
   client.print(F("{\"B0\": "));
   client.print(relayArray[0].bankStatus);
-#if NUMBEROFBOARDS > 1
-  client.print(F(", \"B1\": "));
-  client.print(relayArray[1].bankStatus);
-#endif
-# if NUMBEROFBOARDS > 2
-  client.print(F(", \"B2\": "));
-  client.print(relayArray[2].bankStatus);
-#endif
-#if NUMBEROFBOARDS > 3
-  client.print(F(", \"B3\": "));
-  client.print(relayArray[3].bankStatus);
-#endif
-#if NUMBEROFBOARDS > 4
-  client.print(F(", \"B4\": "));
-  client.print(relayArray[4].bankStatus);
-#endif
-#if NUMBEROFBOARDS > 5
-  client.print(F(", \"B5\": "));
-  client.print(relayArray[5].bankStatus);
-#endif
-#if NUMBEROFBOARDS > 6
-  client.print(F(", \"B6\": "));
-  client.print(relayArray[6].bankStatus);
-#endif
-#if NUMBEROFBOARDS > 7
-  client.print(F(", \"B7\": "));
-  client.print(relayArray[7].bankStatus);
-#endif
+    for(int k = 1; k < NUMBEROFBOARDS; k++)
+    {
+        client.print(F(", \"B"));
+        client.print(k);
+        client.print(F("\": "));
+        client.println(relayArray[k].bankStatus);
+    }
   client.print(F(", \"LockStatus\": "));
   client.print(isLocked);
   client.print(F(", \"Clients\": \""));
@@ -407,34 +386,8 @@ void loop()
           Serial.println(clientline[8]);
           Serial.println(value);
 #endif
-
-          switch (clientline[8])
-          {
-            case '0':
-#ifdef DEBUG
-              Serial.println("SetBank0 detected");
-#endif
-              updatePinStatus(value, 0);            
-              break;
-            case '1':
-#ifdef DEBUG
-              Serial.println("SetBank1 detected");
-#endif
-              updatePinStatus(value, 1);            
-              break;
-            case '2':
-#ifdef DEBUG
-              Serial.println("SetBank2 detected");
-#endif
-              updatePinStatus(value, 2);            
-              break;
-            case '3':
-#ifdef DEBUG
-              Serial.println("SetBank3 detected");
-#endif
-              updatePinStatus(value, 3);            
-              break;
-          }
+          updatePinStatus(value, clientline[8]-'0');            
+              
           Send200OK(client);
           connectLoop = 0;
           break;
